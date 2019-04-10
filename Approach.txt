@@ -4,3 +4,4 @@
 2. // Display the entered instructions
 3. // Display the WAR and WAW false dependencies
     //Perhaps a table, 2 columns (WAR | WAW), show dependencies as {ins1 -> ins2: Reg} 'S1 -> S2: R1'
+4. //Show register renaming in stepwise mode
