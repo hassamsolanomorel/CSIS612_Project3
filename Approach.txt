@@ -1,0 +1,6 @@
+1. //Ask user for MIPs style instructions (up to 5)
+    //Format {ins Reg1 Reg2 Reg3} 'add R1 R2 R3'
+    //User can just enter a blank space or nothing at all to conclude entering instructions
+2. // Display the entered instructions
+3. // Display the WAR and WAW false dependencies
+    //Perhaps a table, 2 columns (WAR | WAW), show dependencies as {ins1 -> ins2: Reg} 'S1 -> S2: R1'
