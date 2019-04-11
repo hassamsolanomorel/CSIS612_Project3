@@ -9,10 +9,6 @@ table_data = [
 ]
 table = AsciiTable(table_data)
 
-# print(table.table)
-
-stop = False
-
 
 def getDependenceStr(ins1, ins2, reg):
     return f"{ins1} -> {ins2}: {reg}"
@@ -38,7 +34,8 @@ def getInstructionFromUser(insNum):
 
     while not validateInput(ins):
         print("The value instruction you entered is invalid. Please try again")
-        print("Remember the instruction must be in the format:ins Reg1 Reg2 Reg3 ")
+        print("Remember the instruction must be in the format:"
+              "ins Reg1 Reg2 Reg3 ")
         ins = input(f"S{insNum}: ")
     return ins
 
@@ -62,7 +59,6 @@ def findWAWs(instructions):
     workingIns = copy.deepcopy(insDict)
 
     for (key, value) in insDict.items():
-        # print(f'key: {key}, value: {value}')
         insParts = value.split()
 
         del workingIns[key]
@@ -71,7 +67,6 @@ def findWAWs(instructions):
             if insParts[1] == otherIns.split()[1]:
                 waws[f'{key} -> {key2}'] = insParts[1]
                 break  # Find only the first occurance of a waw
-    print(f'WAWs: {waws}')
     return waws
 
 
@@ -87,7 +82,6 @@ def findWARs(ins):
     workingIns = copy.deepcopy(insDict)
 
     for (key, value) in insDict.items():
-        # print(f'key: {key}, value: {value}')
         insParts = value.split()
 
         del workingIns[key]
@@ -97,7 +91,6 @@ def findWARs(ins):
                 wars[f'{key} -> {key2}'] = insParts[2]
             if insParts[3] == otherIns.split()[1]:
                 wars[f'{key} -> {key2}'] = insParts[3]
-    print(f'WARs: {wars}')
     return wars
 
 
@@ -107,7 +100,6 @@ def findTrueDependencies(ins):
         ins1 = ins[i].split()
         for k in range(2, len(ins1), 1):
             checkReg = ins1[k]
-            print(f'Checking: {checkReg}')
             for s in range(i-1, -1, -1):
                 ins2 = ins[s].split()
                 if checkReg == ins2[1]:
@@ -116,8 +108,7 @@ def findTrueDependencies(ins):
     return trueDeps
 
 
-def resolveFalseDependencies(instructions, dependencies):
-    # print(dependencies)
+def resolveDependencies(instructions, dependencies):
     waws = dependencies['waw']
     wars = dependencies['war']
     trueDeps = dependencies['trueDeps']
@@ -137,20 +128,19 @@ def resolveFalseDependencies(instructions, dependencies):
 
         try:
             # Check true dependence
-            trueDepsExist, trueDep = checkTrueDepWAW(dependence, trueDeps, reg)
-
-            print(f"True Deps: {trueDep}")
-
+            trueDepsExist, trueDep = checkTrueDep(dependence, trueDeps, reg)
             if trueDepsExist:
                 trueDepParts = trueDep.split()
                 ins1 = insDict[trueDepParts[0]].split()
                 ins2 = insDict[trueDepParts[2]].split()
 
                 ins1ChangeIndex = ins1.index(reg)
-                ins2ChangeIndex = ins2.index(reg)
+                ins2ChangeIndex = [i for i, x in enumerate(ins2) if x == reg]
 
                 ins1[ins1ChangeIndex] = f'T{tNum}'
-                ins2[ins2ChangeIndex] = f'T{tNum}'
+                for index in ins2ChangeIndex:
+                    if index != 1:
+                        ins2[index] = f'T{tNum}'
 
                 insDict[trueDepParts[0]] = ' '.join(ins1)
                 insDict[trueDepParts[2]] = ' '.join(ins2)
@@ -177,11 +167,10 @@ def resolveFalseDependencies(instructions, dependencies):
         except ValueError:
             pass
 
-    # print(insDict)
     return insDict
 
 
-def checkTrueDepWAW(falseDep, trueDeps, reg):
+def checkTrueDep(falseDep, trueDeps, reg):
     # for waws
     depArr = falseDep.split()
     for (trueDep, reg2) in trueDeps.items():
@@ -191,10 +180,39 @@ def checkTrueDepWAW(falseDep, trueDeps, reg):
     return (None, None)
 
 
+def parseDepDictToTableData(dependenciesDict):
+    tableData = [
+        ['WAW', 'WAR', 'True']
+    ]
+    waws = dependenciesDict['waw']
+    wars = dependenciesDict['war']
+    trueDeps = dependenciesDict['trueDeps']
+
+    wawKeys = list(waws.keys())
+    warKeys = list(wars.keys())
+    trueDepKeys = list(trueDeps.keys())
+
+    maxLength = max([len(waws), len(wars), len(trueDeps)])
+    for i in range(0, maxLength):
+        data = [f'{wawKeys[i]} -> {waws[wawKeys[i]]}'
+                if i < len(wawKeys) else '',  # Add WAW Dependencies
+
+                f'{warKeys[i]} -> {wars[warKeys[i]]}'
+                if i < len(warKeys) else '',  # Add WAR Dependencies
+
+                f'{trueDepKeys[i]} -> {trueDeps[trueDepKeys[i]]}'
+                if i < len(trueDepKeys) else '']  # Add True Dependencies
+
+        tableData.append(data)
+    return tableData
+
+
 if __name__ == '__main__':
-    maxNumIns = 5
     numIns = 0
+    maxNumIns = 5
+    stop = False
     instructions = []
+
     print("Enter up to 5 MIPs instructions below. When you're done simply"
           "press enter without typing in any input")
     print("Instructions must be in the format: ins Reg1 Reg2 Reg3")
@@ -219,12 +237,13 @@ if __name__ == '__main__':
 
     table = AsciiTable(table_data)
     print("Here are the instructions provided:")
-    print(table.table)
-    print()
+    print('\n' + table.table + '\n')
     input("Press Enter find any existing false dependencies\n")
     dependenciesDict = findDependencies(instructions)
+    table = AsciiTable(parseDepDictToTableData(dependenciesDict))
+    print('\n' + table.table + '\n')
     input("\nPress Enter to begin renaming registers")
-    resolvedInstructions = resolveFalseDependencies(instructions, dependenciesDict)
+    resolvedInstructions = resolveDependencies(instructions, dependenciesDict)
     resolvedInstructionsArr = []
     for (key, value) in resolvedInstructions.items():
         resolvedInstructionsArr.append(f'{key} - {value}')
@@ -235,6 +254,6 @@ if __name__ == '__main__':
     for ins in resolvedInstructionsArr:
         resolvedTableData.append([ins])
         table = AsciiTable(resolvedTableData)
-        print('\n' + table.table)
+        print(table.table + '\n')
         input('Press Enter to continue')
     print('DONE!\n')
