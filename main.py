@@ -103,43 +103,16 @@ def findWARs(ins):
 
 def findTrueDependencies(ins):
     trueDeps = {}
-    insDict = {}
-    i = 1
-
-    for ins in instructions:
-        insDict[f'S{i}'] = ins
-        i += 1
-
-    workingIns = copy.deepcopy(insDict)
-
-    for instructs in instructions.reverse():
-        checkInsParts = instructs.split()
-        checkAgainstArr = copy.deepcopy(instructions).reverse()
-        indexOfCurrentIns = checkAgainstArr.index(instructs) + 1
-
-        del checkAgainstArr[:indexOfCurrentIns]
-
-        for instruction in checkAgainstArr:
-            insParts = instruction.split()
-            if checkInsParts[2] == insParts[1]:
-                # add this as dependence
-                trueDeps[f'{insParts[0]} -> {checkInsParts[0]}'] = insParts[1]
-            if checkInsParts[3] == insParts[1]:
-                # add this as dependence
-                trueDeps[f'{insParts[0]} -> {key2}'] = insParts[1]
-
-    #
-    # for (key, value) in insDict.items():
-    #     insParts = value.split()
-    #
-    #     del workingIns[key]
-    #
-    #     for (key2, otherIns) in workingIns.items():
-    #         if insParts[1] == otherIns.split()[2]:
-    #             trueDeps[f'{key} -> {key2}'] = insParts[1]
-    #         if insParts[1] == otherIns.split()[3]:
-    #             trueDeps[f'{key} -> {key2}'] = insParts[1]
-    print(f'True Deps: {trueDeps}')
+    for i in range(len(ins)-1, -1, -1):
+        ins1 = ins[i].split()
+        for k in range(2, len(ins1), 1):
+            checkReg = ins1[k]
+            print(f'Checking: {checkReg}')
+            for s in range(i-1, -1, -1):
+                ins2 = ins[s].split()
+                if checkReg == ins2[1]:
+                    trueDeps[f'S{s+1} -> S{i+1}'] = checkReg
+                    break
     return trueDeps
 
 
